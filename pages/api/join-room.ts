@@ -85,6 +85,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           gameState: gameStore.getGame(roomId)
         });
 
+      case 'start-game':
+        const gameForStart = gameStore.getGame(roomId);
+        if (!gameForStart) {
+          return res.status(404).json({ error: '游戏不存在' });
+        }
+
+        const playerForStart = gameForStart.players.find(p => p.id === playerId);
+        if (!playerForStart || !playerForStart.isHost) {
+          return res.status(400).json({ error: '只有房主可以开始游戏' });
+        }
+
+        const success = gameStore.startGame(roomId);
+        if (success) {
+          return res.json({
+            success: true,
+            gameState: gameStore.getGame(roomId)
+          });
+        } else {
+          return res.status(400).json({ error: '无法开始游戏' });
+        }
+
+      case 'toggle-ready':
+        const gameForReady = gameStore.getGame(roomId);
+        if (!gameForReady) {
+          return res.status(404).json({ error: '游戏不存在' });
+        }
+
+        const playerForReady = gameForReady.players.find(p => p.id === playerId);
+        if (!playerForReady) {
+          return res.status(400).json({ error: '玩家不存在' });
+        }
+
+        playerForReady.isReady = !playerForReady.isReady;
+        return res.json({
+          success: true,
+          gameState: gameStore.getGame(roomId)
+        });
+
       case 'submit-guess':
         const { guess } = data;
         const gameForGuess = gameStore.getGame(roomId);

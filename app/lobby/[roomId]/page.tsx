@@ -97,6 +97,7 @@ export default function LobbyPage() {
         body: JSON.stringify({
           action: 'join-room',
           roomId,
+          playerId,
           data: { playerName }
         })
       });
@@ -148,8 +149,29 @@ export default function LobbyPage() {
   const handleToggleReady = async () => {
     if (!currentPlayer) return;
     
-    // 这里可以添加切换准备状态的逻辑
-    console.log('切换准备状态');
+    try {
+      const response = await fetch('/api/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'toggle-ready',
+          roomId,
+          playerId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setGameState(result.gameState);
+          setCurrentPlayer(result.gameState.players.find((p: Player) => p.id === playerId));
+        }
+      }
+    } catch (error) {
+      console.error('切换准备状态失败:', error);
+    }
   };
 
   const handleStartGame = async () => {
@@ -157,9 +179,28 @@ export default function LobbyPage() {
     
     setIsStarting(true);
     try {
-      // 这里可以添加开始游戏的逻辑
-      console.log('开始游戏');
-      router.push(`/game/${roomId}?playerId=${playerId}`);
+      const response = await fetch('/api/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'start-game',
+          roomId,
+          playerId
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          router.push(`/game/${roomId}?playerId=${playerId}`);
+        } else {
+          console.error('开始游戏失败:', result.error);
+        }
+      } else {
+        console.error('开始游戏失败，状态码:', response.status);
+      }
     } catch (error) {
       console.error('开始游戏失败:', error);
     } finally {
