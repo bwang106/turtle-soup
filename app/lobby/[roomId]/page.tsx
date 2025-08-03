@@ -89,7 +89,7 @@ export default function LobbyPage() {
 
   const joinRoom = async (playerName: string) => {
     try {
-      const response = await fetch('/api/socket-polling', {
+      const response = await fetch('/api/game', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ export default function LobbyPage() {
   const startPolling = () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('/api/socket-polling', {
+        const response = await fetch('/api/game', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
