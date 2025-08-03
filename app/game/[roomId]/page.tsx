@@ -283,10 +283,18 @@ export default function GamePage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">加载中...</p>
+          <p className="text-sm text-gray-500 mt-2">游戏状态: {gameState ? '已加载' : '未加载'}</p>
+          <p className="text-sm text-gray-500">当前玩家: {currentPlayer ? '已加载' : '未加载'}</p>
         </div>
       </div>
     );
   }
+
+  // 调试信息
+  console.log('游戏状态:', gameState);
+  console.log('当前玩家:', currentPlayer);
+  console.log('是否轮到当前玩家:', isMyTurn);
+  console.log('游戏状态:', gameState.gameStatus);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -317,6 +325,12 @@ export default function GamePage() {
               <div className="flex items-center space-x-2">
                 <Heart size={16} className="text-red-500" />
                 <span className="text-sm font-medium">{currentPlayer.health}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${gameState.gameStatus === 'playing' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className="text-sm font-medium">
+                  {gameState.gameStatus === 'playing' ? '游戏中' : '等待中'}
+                </span>
               </div>
             </div>
           </div>
@@ -378,10 +392,20 @@ export default function GamePage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border h-96 flex flex-col">
               <div className="p-4 border-b">
-                <h3 className="text-lg font-semibold flex items-center">
-                  <MessageSquare size={20} className="mr-2" />
-                  游戏对话
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <MessageSquare size={20} className="mr-2" />
+                    游戏对话
+                  </h3>
+                  {gameState.gameStatus === 'playing' && (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">当前回合:</span>
+                      <span className="text-sm font-medium text-green-600">
+                        {gameState.players.find(p => p.id === gameState.currentTurn)?.name || '未知'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -416,7 +440,7 @@ export default function GamePage() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
-                    placeholder="输入你的问题..."
+                    placeholder={isMyTurn ? "输入你的问题..." : "等待其他玩家..."}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={!isMyTurn || currentPlayer.health <= 0}
                   />

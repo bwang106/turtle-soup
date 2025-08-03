@@ -203,7 +203,9 @@ export default function LobbyPage() {
         const result = await response.json();
         console.log('开始游戏响应:', result);
         if (result.success) {
-          router.push(`/game/${roomId}?playerId=${playerId}`);
+          // 将游戏状态编码到URL中
+          const gameStateParam = encodeURIComponent(JSON.stringify(result.gameState));
+          router.push(`/game/${roomId}?playerId=${playerId}&gameState=${gameStateParam}`);
         } else {
           console.error('开始游戏失败:', result.error);
         }
