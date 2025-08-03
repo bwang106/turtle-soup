@@ -74,8 +74,9 @@ export default function HomePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: 'join-room',
           roomId: formData.roomId,
-          playerName: formData.playerName
+          data: { playerName: formData.playerName }
         }),
       });
 
