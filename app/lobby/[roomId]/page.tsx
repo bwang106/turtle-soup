@@ -10,7 +10,7 @@ export default function LobbyPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = params.roomId as string;
+  const roomId = params?.roomId as string;
   const playerId = searchParams.get('playerId');
 
   const [socket, setSocket] = useState<Socket | null>(null);

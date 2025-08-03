@@ -8,7 +8,7 @@ export default function ResultPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = params.roomId as string;
+  const roomId = params?.roomId as string;
   const winnerId = searchParams.get('winner');
   const story = searchParams.get('story');
 
