@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { gameStore } from '@/lib/gameStore';
 import { aiService } from '@/lib/aiService';
+import { Player } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
