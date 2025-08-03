@@ -15,7 +15,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const roomId = uuidv4().substring(0, 8);
+    console.log('创建房间:', { roomId, hostName, maxPlayers, timeLimit });
     const gameState = gameStore.createGame(roomId, hostName, maxPlayers, timeLimit);
+    console.log('房间创建后，游戏存储中的房间数量:', gameStore.getGamesCount());
 
     res.status(200).json({
       roomId,

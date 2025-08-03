@@ -33,6 +33,10 @@ class GameStore {
     return this.games.get(roomId);
   }
 
+  getGamesCount(): number {
+    return this.games.size;
+  }
+
   joinGame(roomId: string, playerName: string): Player | null {
     const game = this.games.get(roomId);
     if (!game || game.gameStatus !== 'waiting' || game.players.length >= 4) {

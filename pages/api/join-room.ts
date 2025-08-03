@@ -14,7 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     switch (action) {
       case 'join-room':
         const { playerName } = data;
+        console.log('加入房间请求:', { roomId, playerName, data });
+        console.log('当前游戏存储中的房间数量:', gameStore.getGamesCount());
         const game = gameStore.getGame(roomId);
+        console.log('找到的游戏:', game ? '存在' : '不存在');
         if (!game) {
           return res.status(404).json({ error: '房间不存在' });
         }
