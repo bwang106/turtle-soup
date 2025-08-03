@@ -9,8 +9,8 @@ export default function ResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roomId = params?.roomId as string;
-  const winnerId = searchParams.get('winner');
-  const story = searchParams.get('story');
+  const winnerId = searchParams?.get('winner');
+  const story = searchParams?.get('story');
 
   const [gameStats, setGameStats] = useState({
     totalPlayers: 4,

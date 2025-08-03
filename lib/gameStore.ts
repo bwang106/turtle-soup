@@ -160,7 +160,7 @@ class GameStore {
     const now = new Date();
     const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
-    for (const [roomId, game] of this.games.entries()) {
+    for (const [roomId, game] of Array.from(this.games.entries())) {
       if (game.gameStartTime && game.gameStartTime < twoHoursAgo) {
         this.games.delete(roomId);
       }

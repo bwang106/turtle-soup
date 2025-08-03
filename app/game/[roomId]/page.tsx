@@ -21,7 +21,7 @@ export default function GamePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roomId = params?.roomId as string;
-  const playerId = searchParams.get('playerId');
+  const playerId = searchParams?.get('playerId');
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -44,7 +44,7 @@ export default function GamePage() {
       // Socket 事件监听
       newSocket.on('game-state-updated', (state: GameState) => {
         setGameState(state);
-        const player = state.players.find(p => p.id === playerId);
+        const player = state.players.find((p: Player) => p.id === playerId);
         if (player) {
           setCurrentPlayer(player);
           setIsMyTurn(state.currentTurn === playerId);

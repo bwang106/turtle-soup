@@ -108,14 +108,14 @@ export class AIService {
     const words = text.split(/[\s，。！？；：""''（）【】]/).filter(word => 
       word.length > 1 && !stopWords.includes(word)
     );
-    return [...new Set(words)];
+    return Array.from(new Set(words));
   }
 
   private calculateSimilarity(keywords1: string[], keywords2: string[]): number {
     if (keywords1.length === 0 || keywords2.length === 0) return 0;
     
     const intersection = keywords1.filter(keyword => keywords2.includes(keyword));
-    const union = [...new Set([...keywords1, ...keywords2])];
+    const union = Array.from(new Set([...keywords1, ...keywords2]));
     
     return intersection.length / union.length;
   }

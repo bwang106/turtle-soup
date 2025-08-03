@@ -11,7 +11,7 @@ export default function LobbyPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roomId = params?.roomId as string;
-  const playerId = searchParams.get('playerId');
+  const playerId = searchParams?.get('playerId');
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -43,7 +43,7 @@ export default function LobbyPage() {
           console.log('解析的游戏状态:', initialGameState);
           setGameState(initialGameState);
           
-          const player = initialGameState.players.find(p => p.id === playerId);
+          const player = initialGameState.players.find((p: Player) => p.id === playerId);
           if (player) {
             console.log('找到玩家:', player);
             setCurrentPlayer(player);
@@ -65,7 +65,7 @@ export default function LobbyPage() {
             console.log('从服务器获取的游戏状态:', gameState);
             setGameState(gameState);
             
-            const player = gameState.players.find(p => p.id === playerId);
+            const player = gameState.players.find((p: Player) => p.id === playerId);
             if (player) {
               console.log('找到玩家:', player);
               setCurrentPlayer(player);
@@ -87,9 +87,8 @@ export default function LobbyPage() {
       });
 
       newSocket.on('game-state-updated', (state: GameState) => {
-        console.log('Game state updated:', state);
         setGameState(state);
-        const player = state.players.find(p => p.id === playerId);
+        const player = state.players.find((p: Player) => p.id === playerId);
         if (player) {
           setCurrentPlayer(player);
         }
@@ -137,8 +136,8 @@ export default function LobbyPage() {
     router.push('/');
   };
 
-  const canStartGame = gameState?.players.length >= 1 && 
-    gameState.players.every(p => p.isReady) &&
+  const canStartGame = (gameState?.players?.length || 0) >= 1 && 
+    gameState?.players?.every((p: Player) => p.isReady) &&
     currentPlayer?.isHost;
 
   if (!gameState || !currentPlayer) {
@@ -195,7 +194,7 @@ export default function LobbyPage() {
               <h3 className="text-lg font-semibold">玩家列表</h3>
             </div>
             <p className="text-gray-600">
-              {gameState.players.length} / 4 人
+              {gameState?.players?.length || 0} / 4 人
             </p>
           </div>
           
