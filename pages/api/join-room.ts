@@ -95,8 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           aiResponse: aiResponse.answer
         });
 
-        // 减少血量
-        gameStore.updatePlayerHealth(roomId, playerId, playerForQuestion.health - 1);
+        // 提问不消耗血量，保持当前血量
 
         return res.json({
           success: true,

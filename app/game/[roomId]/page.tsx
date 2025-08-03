@@ -425,6 +425,13 @@ export default function GamePage() {
                       </div>
                                              <div className="bg-gray-100 rounded-lg p-3">
                          <p className="text-sm">{message.message}</p>
+                         {message.aiResponse && (
+                           <div className="mt-2 p-2 bg-blue-50 rounded border-l-2 border-blue-400">
+                             <p className="text-xs text-blue-700">
+                               <strong>AI解释:</strong> {message.aiResponse}
+                             </p>
+                           </div>
+                         )}
                        </div>
                     </div>
                   </div>
@@ -440,7 +447,7 @@ export default function GamePage() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
-                    placeholder={isMyTurn ? "输入你的问题..." : "等待其他玩家..."}
+                    placeholder={isMyTurn ? "输入你的问题（不消耗血量）..." : "等待其他玩家..."}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={!isMyTurn || currentPlayer.health <= 0}
                   />
@@ -462,6 +469,7 @@ export default function GamePage() {
                     onClick={handleRequestHint}
                     disabled={currentPlayer.health <= 0}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="请求提示（消耗1点血量）"
                   >
                     <Lightbulb size={16} />
                   </button>
