@@ -3,5 +3,11 @@
     "pages/api/socket.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/socket/(.*)",
+      "destination": "/api/socket"
+    }
+  ]
 } 

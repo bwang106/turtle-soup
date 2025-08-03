@@ -40,7 +40,8 @@ export default function GamePage() {
       
       const newSocket = io({
         path: '/api/socket',
-        transports: ['polling', 'websocket']
+        transports: ['polling', 'websocket'],
+        addTrailingSlash: false
       });
       setSocket(newSocket);
 

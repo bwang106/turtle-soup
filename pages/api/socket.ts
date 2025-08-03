@@ -27,6 +27,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
       origin: "*",
       methods: ["GET", "POST"]
     },
+    path: '/api/socket',
     transports: ['polling', 'websocket'],
     allowEIO3: true
   });
