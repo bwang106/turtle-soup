@@ -8,24 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/api/socket",
-      "dest": "/api/socket"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "/"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "pages/api/socket.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 } 
