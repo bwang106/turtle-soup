@@ -1,6 +1,7 @@
 {
   "name": "turtle-soup-game",
   "version": "0.1.0",
+  "description": "海龟汤逻辑推理游戏 - 多人在线版本",
   "private": true,
   "scripts": {
     "dev": "next dev",
