@@ -37,6 +37,10 @@ class GameStore {
     return this.games.size;
   }
 
+  setGame(roomId: string, gameState: GameState): void {
+    this.games.set(roomId, gameState);
+  }
+
   joinGame(roomId: string, playerName: string): Player | null {
     const game = this.games.get(roomId);
     if (!game || game.gameStatus !== 'waiting' || game.players.length >= 4) {

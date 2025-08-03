@@ -9,17 +9,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { action, roomId, playerId, data } = req.body;
+    const { action, roomId, playerId, data, currentGameState } = req.body;
+    console.log('API请求:', { action, roomId, playerId, hasData: !!data, hasCurrentGameState: !!currentGameState });
 
     switch (action) {
       case 'join-room':
         const { playerName } = data;
         console.log('加入房间请求:', { roomId, playerName, data });
         console.log('当前游戏存储中的房间数量:', gameStore.getGamesCount());
-        const game = gameStore.getGame(roomId);
+        
+        // 如果有客户端提供的游戏状态，使用它
+        let game = currentGameState ? currentGameState : gameStore.getGame(roomId);
         console.log('找到的游戏:', game ? '存在' : '不存在');
+        
         if (!game) {
           return res.status(404).json({ error: '房间不存在' });
+        }
+        
+        // 如果使用了客户端状态，更新服务器状态
+        if (currentGameState) {
+          gameStore.setGame(roomId, currentGameState);
         }
         
         // 如果提供了 playerId，尝试找到现有玩家
