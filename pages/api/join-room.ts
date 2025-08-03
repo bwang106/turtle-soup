@@ -34,12 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // 如果提供了 playerId，尝试找到现有玩家
         let player: Player | null = null;
         if (playerId) {
-          player = game.players.find(p => p.id === playerId) || null;
+          player = game.players.find((p: Player) => p.id === playerId) || null;
         }
         
         // 如果没有找到现有玩家，尝试通过名字查找
         if (!player) {
-          player = game.players.find(p => p.name === playerName) || null;
+          player = game.players.find((p: Player) => p.name === playerName) || null;
         }
         
         // 如果还是没有找到，创建新玩家
