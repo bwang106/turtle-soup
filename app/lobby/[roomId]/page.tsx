@@ -28,7 +28,7 @@ export default function LobbyPage() {
       // 先初始化 Socket.IO 服务器
       await fetch('/api/socket');
       
-      const newSocket = io();
+      const newSocket = io('/api/socket');
       setSocket(newSocket);
 
       // 从 URL 参数获取初始游戏状态
