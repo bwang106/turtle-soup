@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 移除已弃用的 appDir 选项
+  output: 'standalone',
+  experimental: {
+    appDir: true
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+    };
+    return config;
+  },
 }
 
 module.exports = nextConfig 
