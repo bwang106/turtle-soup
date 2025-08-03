@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { gameStore } from '@/lib/gameStore';
+import { gameStore } from '../../lib/gameStore';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

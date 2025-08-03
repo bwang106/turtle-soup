@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Player, GameState, ChatMessage, Clue } from '@/types/game';
+import { Player, GameState, ChatMessage, Clue } from '../../../types/game';
 import { 
   Send, 
   Heart, 

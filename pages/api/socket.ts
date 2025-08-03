@@ -1,10 +1,10 @@
 import { Server as NetServer } from 'http';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Server as ServerIO } from 'socket.io';
-import { gameStore } from '@/lib/gameStore';
-import { aiService } from '@/lib/aiService';
+import { gameStore } from '../../lib/gameStore';
+import { aiService } from '../../lib/aiService';
 import { v4 as uuidv4 } from 'uuid';
-import { Player } from '@/types/game';
+import { Player } from '../../types/game';
 
 export type NextApiResponseServerIO = NextApiResponse & {
   socket: {

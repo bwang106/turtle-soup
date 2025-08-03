@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { Player, GameState } from '@/types/game';
+import { Player, GameState } from '../../../types/game';
 import { Users, Play, Copy, ArrowLeft, Crown, Heart } from 'lucide-react';
 
 export default function LobbyPage() {

@@ -1,4 +1,4 @@
-import { GameState, Player, ChatMessage, Clue } from '@/types/game';
+import { GameState, Player, ChatMessage, Clue } from '../types/game';
 import { v4 as uuidv4 } from 'uuid';
 
 class GameStore {

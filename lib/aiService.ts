@@ -1,4 +1,4 @@
-import { QuestionResponse, GuessResult } from '@/types/game';
+import { QuestionResponse, GuessResult } from '../types/game';
 
 export class AIService {
   private static instance: AIService;

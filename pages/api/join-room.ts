@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { gameStore } from '@/lib/gameStore';
-import { aiService } from '@/lib/aiService';
-import { Player } from '@/types/game';
+import { gameStore } from '../../lib/gameStore';
+import { aiService } from '../../lib/aiService';
+import { Player } from '../../types/game';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
