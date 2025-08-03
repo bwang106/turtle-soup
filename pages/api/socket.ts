@@ -23,11 +23,12 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
 
   console.log('Setting up socket');
   const io = new ServerIO(res.socket.server, {
-    path: '/socket.io/',
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
-    }
+    },
+    transports: ['polling', 'websocket'],
+    allowEIO3: true
   });
   res.socket.server.io = io;
 

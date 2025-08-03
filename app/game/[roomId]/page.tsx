@@ -38,7 +38,10 @@ export default function GamePage() {
       // 先初始化 Socket.IO 服务器
       await fetch('/api/socket');
       
-      const newSocket = io();
+      const newSocket = io({
+        path: '/api/socket',
+        transports: ['polling', 'websocket']
+      });
       setSocket(newSocket);
 
       // Socket 事件监听
