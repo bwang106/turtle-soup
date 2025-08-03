@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { io, Socket } from 'socket.io-client';
 import { Player, GameState, ChatMessage, Clue } from '../../../types/game';
 import { 
   Send, 
@@ -23,7 +22,7 @@ export default function GamePage() {
   const roomId = params?.roomId as string;
   const playerId = searchParams?.get('playerId');
 
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [question, setQuestion] = useState('');
@@ -34,57 +33,111 @@ export default function GamePage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const initSocket = async () => {
-      // 先初始化 Socket.IO 服务器
-      await fetch('/api/socket');
+    const initGame = async () => {
+      console.log('初始化游戏连接...');
+      console.log('房间ID:', roomId);
+      console.log('玩家ID:', playerId);
       
-      const newSocket = io({
-        path: '/api/socket',
-        transports: ['polling', 'websocket'],
-        addTrailingSlash: false
-      });
-      setSocket(newSocket);
-
-      // Socket 事件监听
-      newSocket.on('game-state-updated', (state: GameState) => {
-        setGameState(state);
-        const player = state.players.find((p: Player) => p.id === playerId);
-        if (player) {
-          setCurrentPlayer(player);
-          setIsMyTurn(state.currentTurn === playerId);
+      // 从 URL 参数获取初始游戏状态
+      const urlParams = new URLSearchParams(window.location.search);
+      const gameStateParam = urlParams.get('gameState');
+      
+      console.log('URL 参数中的游戏状态:', gameStateParam ? '存在' : '不存在');
+      
+      if (gameStateParam) {
+        try {
+          const initialGameState = JSON.parse(decodeURIComponent(gameStateParam));
+          console.log('解析的游戏状态:', initialGameState);
+          setGameState(initialGameState);
+          
+          const player = initialGameState.players.find((p: Player) => p.id === playerId);
+          if (player) {
+            console.log('找到玩家:', player);
+            setCurrentPlayer(player);
+            setIsMyTurn(initialGameState.currentTurn === playerId);
+          } else {
+            console.log('未找到玩家，玩家ID:', playerId);
+          }
+        } catch (error) {
+          console.error('解析游戏状态失败:', error);
         }
-      });
-
-      newSocket.on('question-asked', (message: ChatMessage) => {
-        console.log('New message:', message);
-      });
-
-      newSocket.on('ai-response', (response: any) => {
-        console.log('AI response:', response);
-      });
-
-      newSocket.on('guess-result', (result: any) => {
-        if (result.isCorrect) {
-          alert('恭喜！有人猜对了！');
-          router.push(`/result/${roomId}?winner=${result.winner?.id}`);
+      } else {
+        console.log('尝试从服务器获取游戏状态...');
+        // 如果没有游戏状态参数，尝试从服务器获取
+        try {
+          const response = await fetch(`/api/get-game-state?roomId=${roomId}`);
+          if (response.ok) {
+            const gameState = await response.json();
+            console.log('从服务器获取的游戏状态:', gameState);
+            setGameState(gameState);
+            
+            const player = gameState.players.find((p: Player) => p.id === playerId);
+            if (player) {
+              console.log('找到玩家:', player);
+              setCurrentPlayer(player);
+              setIsMyTurn(gameState.currentTurn === playerId);
+            } else {
+              console.log('未找到玩家，玩家ID:', playerId);
+            }
+          } else {
+            console.error('获取游戏状态失败，状态码:', response.status);
+          }
+        } catch (error) {
+          console.error('获取游戏状态失败:', error);
         }
-      });
+      }
 
-      newSocket.on('game-ended', (winner: Player | null, fullStory: string) => {
-        router.push(`/result/${roomId}?winner=${winner?.id || 'none'}&story=${encodeURIComponent(fullStory)}`);
-      });
-
-      newSocket.on('error', (message: string) => {
-        alert(message);
-      });
-
-      return () => {
-        newSocket.close();
-      };
+      // 开始轮询游戏状态
+      startPolling();
     };
 
-    initSocket();
+    initGame();
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
   }, [roomId, playerId]);
+
+  const startPolling = () => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/join-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'get-game-state',
+            roomId,
+            currentGameState: gameState
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.gameState) {
+            setGameState(result.gameState);
+            const player = result.gameState.players.find((p: Player) => p.id === playerId);
+            if (player) {
+              setCurrentPlayer(player);
+              setIsMyTurn(result.gameState.currentTurn === playerId);
+            }
+            
+            // 检查游戏是否结束
+            if (result.gameState.gameStatus === 'ended') {
+              router.push(`/result/${roomId}?winner=${result.gameState.winner?.id || 'none'}&story=${encodeURIComponent(result.gameState.soupStory)}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('轮询游戏状态失败:', error);
+      }
+    }, 2000); // 每2秒轮询一次
+
+    setPollingInterval(interval);
+  };
 
   // 自动滚动到聊天底部
   useEffect(() => {
@@ -114,37 +167,107 @@ export default function GamePage() {
     }
   }, [gameState?.gameStartTime, gameState?.timeLimit]);
 
-  const handleSubmitQuestion = () => {
-    if (!question.trim() || !socket || !currentPlayer || currentPlayer.health <= 0) {
+  const handleSubmitQuestion = async () => {
+    if (!question.trim() || !currentPlayer || currentPlayer.health <= 0) {
       return;
     }
 
-    socket.emit('submit-question', roomId, currentPlayer.id, question.trim());
-    setQuestion('');
+    try {
+      const response = await fetch('/api/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'submit-question',
+          roomId,
+          playerId,
+          data: { question: question.trim() },
+          currentGameState: gameState
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setGameState(result.gameState);
+          setQuestion('');
+        }
+      }
+    } catch (error) {
+      console.error('提交问题失败:', error);
+    }
   };
 
-  const handleSubmitGuess = () => {
-    if (!guess.trim() || !socket || !currentPlayer || currentPlayer.health <= 0) {
+  const handleSubmitGuess = async () => {
+    if (!guess.trim() || !currentPlayer || currentPlayer.health <= 0) {
       return;
     }
 
-    socket.emit('submit-guess', roomId, currentPlayer.id, guess.trim());
-    setGuess('');
-    setShowGuessModal(false);
+    try {
+      const response = await fetch('/api/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'submit-guess',
+          roomId,
+          playerId,
+          data: { guess: guess.trim() },
+          currentGameState: gameState
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setGameState(result.gameState);
+          setGuess('');
+          setShowGuessModal(false);
+          
+          // 如果猜对了，跳转到结果页
+          if (result.gameState.gameStatus === 'ended') {
+            router.push(`/result/${roomId}?winner=${result.gameState.winner?.id || 'none'}&story=${encodeURIComponent(result.gameState.soupStory)}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('提交猜测失败:', error);
+    }
   };
 
-  const handleRequestHint = () => {
-    if (!socket || !currentPlayer || currentPlayer.health <= 0) {
+  const handleRequestHint = async () => {
+    if (!currentPlayer || currentPlayer.health <= 0) {
       return;
     }
 
-    socket.emit('request-hint', roomId, currentPlayer.id);
+    try {
+      const response = await fetch('/api/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'request-hint',
+          roomId,
+          playerId,
+          currentGameState: gameState
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setGameState(result.gameState);
+        }
+      }
+    } catch (error) {
+      console.error('请求提示失败:', error);
+    }
   };
 
   const handleLeaveGame = () => {
-    if (socket && currentPlayer) {
-      socket.emit('leave-room', roomId, currentPlayer.id);
-    }
     router.push('/');
   };
 
@@ -158,7 +281,7 @@ export default function GamePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">加载中...</p>
         </div>
       </div>
@@ -166,236 +289,195 @@ export default function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto h-screen flex flex-col">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-xl p-4 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <ArrowLeft 
-                className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-800"
+              <button
                 onClick={handleLeaveGame}
-              />
-              <h1 className="text-2xl font-bold text-gray-800">海龟汤游戏</h1>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Users className="w-5 h-5" />
-                <span>{gameState.players.length} 人</span>
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={20} />
+                <span>返回</span>
+              </button>
+              <div className="h-6 w-px bg-gray-300"></div>
+              <div className="flex items-center space-x-2">
+                <Users size={20} className="text-blue-600" />
+                <span className="text-sm text-gray-600">房间: {roomId}</span>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-red-500" />
-                <span className={`font-mono ${timeLeft <= 300 ? 'text-red-600' : 'text-gray-600'}`}>
-                  {formatTime(timeLeft)}
-                </span>
+                <Clock size={16} className="text-orange-500" />
+                <span className="text-sm font-medium">{formatTime(timeLeft)}</span>
               </div>
-              
               <div className="flex items-center space-x-2">
-                <Heart className="w-5 h-5 text-red-500" />
-                <span className="text-gray-600">
-                  {currentPlayer.health}/{gameState.maxHealth}
-                </span>
+                <Heart size={16} className="text-red-500" />
+                <span className="text-sm font-medium">{currentPlayer.health}</span>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Players Panel */}
-          <div className="bg-white rounded-xl shadow-xl p-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">玩家状态</h2>
-            <div className="space-y-3">
-              {gameState.players.map((player) => (
-                <div
-                  key={player.id}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    player.id === currentPlayer.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 bg-gray-50'
-                  } ${player.health <= 0 ? 'opacity-50' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 左侧：玩家列表和血量 */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Users size={20} className="mr-2" />
+                玩家列表
+              </h3>
+              <div className="space-y-3">
+                {gameState.players.map((player) => (
+                  <div
+                    key={player.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      player.id === currentPlayer.id ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+                    }`}
+                  >
                     <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                        {player.isHost && (
-                          <Crown className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" />
-                        )}
-                      </div>
-                      
-                      <div>
-                        <p className="font-medium text-gray-800 text-sm">
-                          {player.name}
-                          {player.id === currentPlayer.id && (
-                            <span className="ml-1 text-xs bg-blue-100 text-blue-600 px-1 rounded">
-                              你
-                            </span>
-                          )}
-                        </p>
-                        <div className="flex items-center space-x-1 mt-1">
-                          {Array.from({ length: gameState.maxHealth }).map((_, i) => (
-                            <Heart
-                              key={i}
-                              className={`w-3 h-3 ${
-                                i < player.health ? 'text-red-500 fill-current' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                      {player.isHost && <Crown size={16} className="text-yellow-500" />}
+                      <span className="font-medium">{player.name}</span>
+                      {gameState.currentTurn === player.id && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      )}
                     </div>
-                    
-                    {gameState.currentTurn === player.id && (
-                      <div className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
-                        轮到
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <Heart size={14} className="text-red-500" />
+                      <span className="text-sm">{player.health}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Chat Panel */}
-          <div className="bg-white rounded-xl shadow-xl p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                <MessageSquare className="w-5 h-5 mr-2" />
-                游戏对话
-              </h2>
-              {isMyTurn && currentPlayer.health > 0 && (
-                <div className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
-                  你的回合
+            {/* 线索区域 */}
+            {gameState.discoveredClues.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border p-4 mt-4">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Lightbulb size={20} className="mr-2" />
+                  已发现的线索
+                </h3>
+                <div className="space-y-2">
+                  {gameState.discoveredClues.map((clue, index) => (
+                    <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">{clue.description}</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-              {gameState.chatHistory.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-3 rounded-lg ${
-                    message.playerId === 'ai'
-                      ? 'bg-blue-50 border-l-4 border-blue-500'
-                      : message.playerId === currentPlayer.id
-                      ? 'bg-green-50 border-l-4 border-green-500'
-                      : 'bg-gray-50 border-l-4 border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm">
-                      {message.playerName}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{message.message}</p>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-            
-            {/* Input Area */}
-            {currentPlayer.health > 0 && (
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
-                  placeholder={isMyTurn ? "输入你的问题..." : "等待其他玩家..."}
-                  disabled={!isMyTurn}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-                <button
-                  onClick={handleSubmitQuestion}
-                  disabled={!isMyTurn || !question.trim() || currentPlayer.health <= 0}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
               </div>
             )}
           </div>
 
-          {/* Actions Panel */}
-          <div className="bg-white rounded-xl shadow-xl p-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">游戏操作</h2>
-            
-            <div className="space-y-4">
-              {/* Hint Button */}
-              <button
-                onClick={handleRequestHint}
-                disabled={currentPlayer.health <= 0}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <Lightbulb className="w-5 h-5 mr-2" />
-                请求提示 (-1 血量)
-              </button>
+          {/* 中间：聊天区域 */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border h-96 flex flex-col">
+              <div className="p-4 border-b">
+                <h3 className="text-lg font-semibold flex items-center">
+                  <MessageSquare size={20} className="mr-2" />
+                  游戏对话
+                </h3>
+              </div>
               
-              {/* Guess Button */}
-              <button
-                onClick={() => setShowGuessModal(true)}
-                disabled={currentPlayer.health <= 0}
-                className="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <Target className="w-5 h-5 mr-2" />
-                猜测答案 (-1 血量)
-              </button>
-              
-              {/* Discovered Clues */}
-              {gameState.discoveredClues.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-md font-semibold text-gray-800 mb-3">已发现的线索</h3>
-                  <div className="space-y-2">
-                    {gameState.discoveredClues.map((clue) => (
-                      <div key={clue.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="font-medium text-sm text-green-800">{clue.title}</p>
-                        <p className="text-xs text-green-600 mt-1">{clue.description}</p>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {gameState.chatHistory.map((message, index) => (
+                  <div key={index} className="flex space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {message.playerName.charAt(0).toUpperCase()}
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-sm">{message.playerName}</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                                             <div className="bg-gray-100 rounded-lg p-3">
+                         <p className="text-sm">{message.message}</p>
+                       </div>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
 
-        {/* Guess Modal */}
-        {showGuessModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">猜测答案</h3>
-              <textarea
-                value={guess}
-                onChange={(e) => setGuess(e.target.value)}
-                placeholder="输入你的猜测..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
-                rows={4}
-              />
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowGuessModal(false)}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSubmitGuess}
-                  disabled={!guess.trim()}
-                  className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                >
-                  提交猜测
-                </button>
+              {/* 输入区域 */}
+              <div className="p-4 border-t">
+                <div className="flex space-x-3">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
+                    placeholder="输入你的问题..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={!isMyTurn || currentPlayer.health <= 0}
+                  />
+                  <button
+                    onClick={handleSubmitQuestion}
+                    disabled={!question.trim() || !isMyTurn || currentPlayer.health <= 0}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Send size={16} />
+                  </button>
+                  <button
+                    onClick={() => setShowGuessModal(true)}
+                    disabled={currentPlayer.health <= 0}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Target size={16} />
+                  </button>
+                  <button
+                    onClick={handleRequestHint}
+                    disabled={currentPlayer.health <= 0}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Lightbulb size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* 猜测模态框 */}
+      {showGuessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">尝试猜测答案</h3>
+            <textarea
+              value={guess}
+              onChange={(e) => setGuess(e.target.value)}
+              placeholder="输入你的猜测..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              rows={3}
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={handleSubmitGuess}
+                disabled={!guess.trim()}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                提交猜测
+              </button>
+              <button
+                onClick={() => setShowGuessModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

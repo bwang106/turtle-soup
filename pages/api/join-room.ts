@@ -174,6 +174,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           gameState: gameStore.getGame(roomId)
         });
 
+      case 'request-hint':
+        const gameForHint = gameStore.getGame(roomId);
+        if (!gameForHint) {
+          return res.status(404).json({ error: '游戏不存在' });
+        }
+
+        const playerForHint = gameForHint.players.find(p => p.id === playerId);
+        if (!playerForHint || playerForHint.health <= 0) {
+          return res.status(400).json({ error: '无法请求提示' });
+        }
+
+        // 减少血量
+        gameStore.updatePlayerHealth(roomId, playerId, playerForHint.health - 1);
+
+        // 生成提示
+        const hint = await aiService.generateHint(gameForHint.soupStory, gameForHint.discoveredClues?.map(c => c.description) || []);
+        
+        // 添加提示到聊天记录
+        const hintMessage = gameStore.addChatMessage(roomId, {
+          playerId: 'ai',
+          playerName: 'AI主持人',
+          message: `提示：${hint}`,
+          type: 'hint'
+        });
+
+        return res.json({
+          success: true,
+          hintMessage,
+          gameState: gameStore.getGame(roomId)
+        });
+
       default:
         return res.status(400).json({ error: '未知操作' });
     }
