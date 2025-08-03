@@ -23,6 +23,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
 
   console.log('Setting up socket');
   const io = new ServerIO(res.socket.server, {
+    path: '/socket.io/',
     cors: {
       origin: "*",
       methods: ["GET", "POST"]

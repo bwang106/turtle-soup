@@ -38,7 +38,7 @@ export default function GamePage() {
       // 先初始化 Socket.IO 服务器
       await fetch('/api/socket');
       
-      const newSocket = io('/api/socket');
+      const newSocket = io();
       setSocket(newSocket);
 
       // Socket 事件监听
