@@ -89,6 +89,7 @@ export default function LobbyPage() {
 
   const joinRoom = async (playerName: string) => {
     try {
+      console.log('尝试加入房间:', { roomId, playerId, playerName });
       const response = await fetch('/api/join-room', {
         method: 'POST',
         headers: {
@@ -102,12 +103,17 @@ export default function LobbyPage() {
         })
       });
 
+      console.log('加入房间响应状态:', response.status);
       if (response.ok) {
         const result = await response.json();
+        console.log('加入房间响应:', result);
         if (result.success) {
           setGameState(result.gameState);
           setCurrentPlayer(result.player);
         }
+      } else {
+        const errorText = await response.text();
+        console.error('加入房间失败，状态码:', response.status, '错误:', errorText);
       }
     } catch (error) {
       console.error('加入房间失败:', error);
@@ -179,6 +185,7 @@ export default function LobbyPage() {
     
     setIsStarting(true);
     try {
+      console.log('尝试开始游戏:', { roomId, playerId, canStartGame });
       const response = await fetch('/api/join-room', {
         method: 'POST',
         headers: {
@@ -191,15 +198,18 @@ export default function LobbyPage() {
         })
       });
 
+      console.log('开始游戏响应状态:', response.status);
       if (response.ok) {
         const result = await response.json();
+        console.log('开始游戏响应:', result);
         if (result.success) {
           router.push(`/game/${roomId}?playerId=${playerId}`);
         } else {
           console.error('开始游戏失败:', result.error);
         }
       } else {
-        console.error('开始游戏失败，状态码:', response.status);
+        const errorText = await response.text();
+        console.error('开始游戏失败，状态码:', response.status, '错误:', errorText);
       }
     } catch (error) {
       console.error('开始游戏失败:', error);
@@ -221,7 +231,7 @@ export default function LobbyPage() {
     router.push('/');
   };
 
-  const canStartGame = (gameState?.players?.length || 0) >= 1 && gameState?.players?.every((p: Player) => p.isReady) && currentPlayer?.isHost;
+  const canStartGame = (gameState?.players?.length || 0) >= 1 && gameState?.players?.every((p: Player) => p.isReady) && currentPlayer?.isHost && gameState?.gameStatus === 'waiting';
 
   if (!gameState || !currentPlayer) {
     return (
