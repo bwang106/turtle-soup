@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         const existingPlayer = game.players.find(p => p.name === playerName);
-        let player = existingPlayer;
+        let player: Player | null = existingPlayer || null;
         
         if (!existingPlayer) {
           player = gameStore.joinGame(roomId, playerName);
