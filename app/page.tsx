@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Users, Clock, Play, LogIn } from 'lucide-react';
+import { Heart, Users, Clock, Play, LogIn, Sparkles, Zap, Crown } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -96,89 +96,98 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-6xl font-bold text-gray-800 mb-4">
-            海龟汤
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
+    <div className="min-h-screen mystery-bg flex items-center justify-center p-4 relative overflow-hidden">
+      {/* 背景装饰元素 */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-500 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-indigo-500 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      <div className="max-w-6xl w-full relative z-10">
+        {/* 主标题区域 */}
+        <div className="text-center mb-16">
+          <div className="flex items-center justify-center mb-6">
+            <Sparkles className="w-12 h-12 text-purple-400 mr-4 animate-pulse" />
+            <h1 className="text-7xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              海龟汤
+            </h1>
+            <Sparkles className="w-12 h-12 text-purple-400 ml-4 animate-pulse delay-500" />
+          </div>
+          <p className="text-2xl text-gray-300 mb-8 typewriter">
             逻辑推理游戏 - 与 AI 主持人一起探索谜题
           </p>
           
-          {/* Game Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <Users className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">多人游戏</h3>
-              <p className="text-gray-600">支持 1-4 名玩家在线参与</p>
+          {/* 游戏特色展示 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div className="mystery-card p-8 text-center group hover:glow-effect">
+              <Users className="w-16 h-16 text-purple-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-semibold mb-3 text-purple-300">多人游戏</h3>
+              <p className="text-gray-400">支持 1-4 名玩家在线参与，体验团队推理的乐趣</p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">血量系统</h3>
-              <p className="text-gray-600">每名玩家 5 点血量，提问消耗血量</p>
+            <div className="mystery-card p-8 text-center group hover:glow-effect">
+              <Heart className="w-16 h-16 text-red-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-semibold mb-3 text-red-300">血量系统</h3>
+              <p className="text-gray-400">每名玩家 5 点血量，策略性地使用提示和猜测</p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <Clock className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">限时挑战</h3>
-              <p className="text-gray-600">30 分钟时间限制，增加紧张感</p>
+            <div className="mystery-card p-8 text-center group hover:glow-effect">
+              <Clock className="w-16 h-16 text-green-400 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-semibold mb-3 text-green-300">限时挑战</h3>
+              <p className="text-gray-400">30 分钟时间限制，增加紧张感和策略性</p>
             </div>
           </div>
         </div>
 
-        {/* Game Options */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Create Room */}
-          <div className="bg-white rounded-xl shadow-xl p-8">
-            <div className="flex items-center mb-6">
-              <Play className="w-8 h-8 text-blue-500 mr-3" />
-              <h2 className="text-2xl font-bold text-gray-800">创建游戏</h2>
+        {/* 游戏选项区域 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* 创建房间 */}
+          <div className="mystery-card p-8 group hover:glow-effect">
+            <div className="flex items-center mb-8">
+              <Crown className="w-10 h-10 text-yellow-400 mr-4" />
+              <h2 className="text-3xl font-bold text-yellow-300">创建游戏</h2>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-3">
                   房主名称
                 </label>
                 <input
                   type="text"
                   value={formData.hostName}
                   onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-6 py-4 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all"
                   placeholder="输入你的名字"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
                     最大玩家数
                   </label>
                   <select
                     value={formData.maxPlayers}
                     onChange={(e) => setFormData({ ...formData, maxPlayers: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
                   >
                     <option value={2}>2 人</option>
                     <option value={3}>3 人</option>
                     <option value={4}>4 人</option>
                   </select>
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    时间限制 (分钟)
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    时间限制
                   </label>
                   <select
                     value={formData.timeLimit}
                     onChange={(e) => setFormData({ ...formData, timeLimit: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
                   >
                     <option value={15}>15 分钟</option>
                     <option value={30}>30 分钟</option>
                     <option value={45}>45 分钟</option>
-                    <option value={60}>60 分钟</option>
                   </select>
                 </div>
               </div>
@@ -186,44 +195,53 @@ export default function HomePage() {
               <button
                 onClick={handleCreateRoom}
                 disabled={isCreating}
-                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center"
+                className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
               >
-                {isCreating ? '创建中...' : '创建游戏'}
+                {isCreating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    创建中...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5 mr-2" />
+                    创建房间
+                  </>
+                )}
               </button>
             </div>
           </div>
 
-          {/* Join Room */}
-          <div className="bg-white rounded-xl shadow-xl p-8">
-            <div className="flex items-center mb-6">
-              <LogIn className="w-8 h-8 text-green-500 mr-3" />
-              <h2 className="text-2xl font-bold text-gray-800">加入游戏</h2>
+          {/* 加入房间 */}
+          <div className="mystery-card p-8 group hover:glow-effect">
+            <div className="flex items-center mb-8">
+              <LogIn className="w-10 h-10 text-blue-400 mr-4" />
+              <h2 className="text-3xl font-bold text-blue-300">加入游戏</h2>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-3">
                   房间号
                 </label>
                 <input
                   type="text"
                   value={formData.roomId}
                   onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="输入 8 位房间号"
-                  maxLength={8}
+                  className="w-full px-6 py-4 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 transition-all"
+                  placeholder="输入房间号"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-3">
                   玩家名称
                 </label>
                 <input
                   type="text"
                   value={formData.playerName}
                   onChange={(e) => setFormData({ ...formData, playerName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-6 py-4 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 transition-all"
                   placeholder="输入你的名字"
                 />
               </div>
@@ -231,17 +249,29 @@ export default function HomePage() {
               <button
                 onClick={handleJoinRoom}
                 disabled={isJoining}
-                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
               >
-                {isJoining ? '加入中...' : '加入游戏'}
+                {isJoining ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    加入中...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5 mr-2" />
+                    加入房间
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-12 text-gray-500">
-          <p>© 2024 海龟汤逻辑推理游戏. 享受推理的乐趣！</p>
+        {/* 底部装饰 */}
+        <div className="text-center mt-16">
+          <p className="text-gray-500 text-sm">
+            准备好挑战你的逻辑推理能力了吗？
+          </p>
         </div>
       </div>
     </div>
