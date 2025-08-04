@@ -2,8 +2,14 @@ import { QuestionResponse, GuessResult } from '../types/game';
 
 export class AIService {
   private static instance: AIService;
+  private openaiApiKey: string | null = null;
+  private useOpenAI: boolean = false;
   
-  private constructor() {}
+  private constructor() {
+    // 检查是否有OpenAI API密钥
+    this.openaiApiKey = process.env.OPENAI_API_KEY || null;
+    this.useOpenAI = !!this.openaiApiKey;
+  }
   
   static getInstance(): AIService {
     if (!AIService.instance) {
@@ -12,16 +18,85 @@ export class AIService {
     return AIService.instance;
   }
 
+  // 设置OpenAI API密钥
+  setOpenAIKey(apiKey: string) {
+    this.openaiApiKey = apiKey;
+    this.useOpenAI = true;
+  }
+
   async answerQuestion(question: string, soupStory: string): Promise<QuestionResponse> {
+    if (this.useOpenAI && this.openaiApiKey) {
+      return this.answerQuestionWithOpenAI(question, soupStory);
+    } else {
+      return this.answerQuestionWithSimulation(question, soupStory);
+    }
+  }
+
+  private async answerQuestionWithOpenAI(question: string, soupStory: string): Promise<QuestionResponse> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: `你是一个海龟汤游戏的主持人。玩家会提出可以用"是"或"否"回答的问题。
+游戏规则：
+1. 只能回答：是、不是、无关、你很接近了
+2. 根据故事内容判断问题的相关性
+3. 保持神秘感，不要透露太多信息
+4. 如果问题无法用是/否回答，回答"无关"
+
+故事背景：${soupStory}`
+            },
+            {
+              role: 'user',
+              content: `问题：${question}`
+            }
+          ],
+          max_tokens: 50,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const answer = data.choices[0].message.content.trim();
+
+      // 解析AI回答
+      if (answer.includes('是') && !answer.includes('不是')) {
+        return { answer: 'yes', explanation: answer };
+      } else if (answer.includes('不是') || answer.includes('否')) {
+        return { answer: 'no', explanation: answer };
+      } else if (answer.includes('接近')) {
+        return { answer: 'close', explanation: answer };
+      } else {
+        return { answer: 'irrelevant', explanation: answer };
+      }
+    } catch (error) {
+      console.error('OpenAI API调用失败，使用模拟回答:', error);
+      return this.answerQuestionWithSimulation(question, soupStory);
+    }
+  }
+
+  private answerQuestionWithSimulation(question: string, soupStory: string): Promise<QuestionResponse> {
     const normalizedQuestion = question.toLowerCase();
     const normalizedStory = soupStory.toLowerCase();
     
     // 检查问题是否为合法的"是/否"判断题
     if (!this.isValidYesNoQuestion(normalizedQuestion)) {
-      return { 
+      return Promise.resolve({ 
         answer: 'irrelevant',
         explanation: '请提出可以用"是"或"否"回答的问题。'
-      };
+      });
     }
     
     // 分析问题类型和内容
@@ -33,29 +108,101 @@ export class AIService {
     
     // 根据海龟汤标准规则给出回答
     if (relevanceScore >= 0.8) {
-      return { 
+      return Promise.resolve({ 
         answer: 'yes',
         explanation: '是'
-      };
+      });
     } else if (relevanceScore >= 0.6) {
-      return { 
+      return Promise.resolve({ 
         answer: 'close',
         explanation: '你很接近了'
-      };
+      });
     } else if (relevanceScore >= 0.3) {
-      return { 
+      return Promise.resolve({ 
         answer: 'irrelevant',
         explanation: '无关'
-      };
+      });
     } else {
-      return { 
+      return Promise.resolve({ 
         answer: 'no',
         explanation: '不是'
-      };
+      });
     }
   }
 
   async checkGuess(guess: string, soupStory: string): Promise<GuessResult> {
+    if (this.useOpenAI && this.openaiApiKey) {
+      return this.checkGuessWithOpenAI(guess, soupStory);
+    } else {
+      return this.checkGuessWithSimulation(guess, soupStory);
+    }
+  }
+
+  private async checkGuessWithOpenAI(guess: string, soupStory: string): Promise<GuessResult> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: `你是海龟汤游戏的裁判。判断玩家的猜测是否正确。
+规则：
+1. 严格比较猜测与故事内容
+2. 如果猜测基本正确（核心要素匹配），返回"正确"
+3. 如果部分正确但不够完整，返回"部分正确"
+4. 如果完全错误，返回"错误"
+5. 给出简短的评价和建议
+
+故事：${soupStory}`
+            },
+            {
+              role: 'user',
+              content: `玩家猜测：${guess}`
+            }
+          ],
+          max_tokens: 150,
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const result = data.choices[0].message.content.trim();
+
+      // 解析AI判断结果
+      if (result.includes('正确') && !result.includes('部分') && !result.includes('错误')) {
+        return {
+          isCorrect: true,
+          message: result,
+          fullStory: this.getFullStory(soupStory)
+        };
+      } else if (result.includes('部分正确') || result.includes('接近')) {
+        return {
+          isCorrect: false,
+          message: result
+        };
+      } else {
+        return {
+          isCorrect: false,
+          message: result
+        };
+      }
+    } catch (error) {
+      console.error('OpenAI API调用失败，使用模拟判断:', error);
+      return this.checkGuessWithSimulation(guess, soupStory);
+    }
+  }
+
+  private checkGuessWithSimulation(guess: string, soupStory: string): Promise<GuessResult> {
     const normalizedGuess = guess.toLowerCase();
     const normalizedStory = soupStory.toLowerCase();
     
@@ -72,42 +219,97 @@ export class AIService {
     const overallScore = (keywordSimilarity * 0.4 + semanticSimilarity * 0.4 + conceptSimilarity * 0.2);
     
     if (overallScore > 0.75) {
-      return {
+      return Promise.resolve({
         isCorrect: true,
         message: '恭喜！你猜对了！',
         fullStory: this.getFullStory(soupStory)
-      };
+      });
     } else if (overallScore > 0.5) {
-      return {
+      return Promise.resolve({
         isCorrect: false,
         message: '很接近了，但还不够准确。继续思考！'
-      };
+      });
     } else if (overallScore > 0.3) {
-      return {
+      return Promise.resolve({
         isCorrect: false,
         message: '方向是对的，但细节还需要调整。'
-      };
+      });
     } else {
-      return {
+      return Promise.resolve({
         isCorrect: false,
         message: '猜错了，继续努力！'
-      };
+      });
     }
   }
 
   async generateHint(soupStory: string, discoveredClues: string[]): Promise<string> {
+    if (this.useOpenAI && this.openaiApiKey) {
+      return this.generateHintWithOpenAI(soupStory, discoveredClues);
+    } else {
+      return this.generateHintWithSimulation(soupStory, discoveredClues);
+    }
+  }
+
+  private async generateHintWithOpenAI(soupStory: string, discoveredClues: string[]): Promise<string> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: `你是海龟汤游戏的主持人，为玩家提供提示。
+规则：
+1. 根据游戏进度提供适当的提示
+2. 提示要有用但不要直接透露答案
+3. 提示要简洁明了
+4. 考虑已发现的线索，避免重复
+
+故事：${soupStory}
+已发现的线索：${discoveredClues.join(', ')}`
+            },
+            {
+              role: 'user',
+              content: '请提供一个有用的提示'
+            }
+          ],
+          max_tokens: 100,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error('OpenAI API调用失败，使用模拟提示:', error);
+      return this.generateHintWithSimulation(soupStory, discoveredClues);
+    }
+  }
+
+  private generateHintWithSimulation(soupStory: string, discoveredClues: string[]): Promise<string> {
     const storyType = this.analyzeStoryType(soupStory);
     const progress = discoveredClues.length;
     
-    // 根据故事类型和进度生成不同的提示
+    // 根据故事类型和进度生成提示
     const hints = this.getHintsByStoryType(storyType, progress, soupStory);
     
-    // 根据已发现的线索调整提示
-    if (discoveredClues.length > 0) {
-      return this.generateAdvancedHint(soupStory, discoveredClues, storyType);
+    if (hints.length > 0) {
+      const randomHint = hints[Math.floor(Math.random() * hints.length)];
+      return Promise.resolve(randomHint);
     }
     
-    return hints[Math.floor(Math.random() * hints.length)];
+    // 如果没有预设提示，生成高级提示
+    const advancedHint = this.generateAdvancedHint(soupStory, discoveredClues, storyType);
+    return Promise.resolve(advancedHint);
   }
 
   private isValidYesNoQuestion(question: string): boolean {

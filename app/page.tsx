@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, Users, Clock, Play, LogIn, Sparkles, Zap, Crown } from 'lucide-react';
+import { Heart, Users, Clock, Play, LogIn, Sparkles, Zap, Crown, Settings, Bot } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [showAIConfig, setShowAIConfig] = useState(false);
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [isConfiguring, setIsConfiguring] = useState(false);
   const [formData, setFormData] = useState({
     hostName: '',
     roomId: '',
@@ -95,6 +98,38 @@ export default function HomePage() {
     }
   };
 
+  const handleConfigureAI = async () => {
+    if (!openaiKey.trim()) {
+      alert('请输入OpenAI API密钥');
+      return;
+    }
+
+    setIsConfiguring(true);
+    try {
+      const response = await fetch('/api/configure-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiKey: openaiKey.trim() }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('AI配置成功！现在游戏将使用GPT-3.5进行智能回答。');
+        setShowAIConfig(false);
+        setOpenaiKey('');
+      } else {
+        alert(data.error || 'AI配置失败');
+      }
+    } catch (error) {
+      console.error('配置AI失败:', error);
+      alert('AI配置失败');
+    } finally {
+      setIsConfiguring(false);
+    }
+  };
+
   return (
     <div className="min-h-screen mystery-bg flex items-center justify-center p-4 relative overflow-hidden">
       {/* 背景装饰元素 */}
@@ -117,6 +152,69 @@ export default function HomePage() {
           <p className="text-2xl text-gray-300 mb-8 typewriter">
             逻辑推理游戏 - 与 AI 主持人一起探索谜题
           </p>
+          
+          {/* AI配置按钮 */}
+          <div className="mb-8">
+            <button
+              onClick={() => setShowAIConfig(!showAIConfig)}
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
+            >
+              <Bot size={20} />
+              <span>配置AI助手</span>
+            </button>
+          </div>
+
+          {/* AI配置面板 */}
+          {showAIConfig && (
+            <div className="mystery-card p-6 max-w-md mx-auto mb-8">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-green-300">
+                <Settings size={20} className="mr-2" />
+                OpenAI API 配置
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    OpenAI API 密钥
+                  </label>
+                  <input
+                    type="password"
+                    value={openaiKey}
+                    onChange={(e) => setOpenaiKey(e.target.value)}
+                    placeholder="sk-..."
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white placeholder-gray-400 transition-all"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleConfigureAI}
+                    disabled={isConfiguring}
+                    className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                  >
+                    {isConfiguring ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>配置中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bot size={16} />
+                        <span>配置AI</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setShowAIConfig(false)}
+                    className="px-4 py-3 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+                  >
+                    取消
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400">
+                  配置后，游戏将使用GPT-3.5进行智能回答，提供更真实的游戏体验。
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* 游戏特色展示 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
