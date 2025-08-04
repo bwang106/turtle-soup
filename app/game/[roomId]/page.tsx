@@ -16,7 +16,8 @@ import {
   Sparkles,
   Zap,
   Eye,
-  Brain
+  Brain,
+  BookOpen
 } from 'lucide-react';
 
 export default function GamePage() {
@@ -177,15 +178,6 @@ export default function GamePage() {
       return;
     }
 
-    // 添加纸飞机动画效果
-    const submitButton = document.querySelector('.submit-question-btn');
-    if (submitButton) {
-      submitButton.classList.add('paper-plane');
-      setTimeout(() => {
-        submitButton.classList.remove('paper-plane');
-      }, 1000);
-    }
-
     setIsTyping(true);
     try {
       const response = await fetch('/api/join-room', {
@@ -259,15 +251,6 @@ export default function GamePage() {
       return;
     }
 
-    // 添加血量减少动画
-    const heartElement = document.querySelector(`[data-player-id="${currentPlayer.id}"] .heart-icon`);
-    if (heartElement) {
-      heartElement.classList.add('heart-lose');
-      setTimeout(() => {
-        heartElement.classList.remove('heart-lose');
-      }, 500);
-    }
-
     try {
       const response = await fetch('/api/join-room', {
         method: 'POST',
@@ -316,12 +299,6 @@ export default function GamePage() {
     );
   }
 
-  // 调试信息
-  console.log('游戏状态:', gameState);
-  console.log('当前玩家:', currentPlayer);
-  console.log('是否轮到当前玩家:', isMyTurn);
-  console.log('游戏状态:', gameState.gameStatus);
-
   return (
     <div className="min-h-screen mystery-bg">
       {/* Header */}
@@ -349,11 +326,11 @@ export default function GamePage() {
                 <span className="text-sm font-medium text-orange-300">{formatTime(timeLeft)}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Heart size={16} className="text-red-400 heart-beat" />
+                <Heart size={16} className="text-red-400" />
                 <span className="text-sm font-medium text-red-300">{currentPlayer.health}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${gameState.gameStatus === 'playing' ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${gameState.gameStatus === 'playing' ? 'bg-green-400' : 'bg-gray-400'}`}></div>
                 <span className="text-sm font-medium text-gray-300">
                   {gameState.gameStatus === 'playing' ? '游戏中' : '等待中'}
                 </span>
@@ -364,6 +341,19 @@ export default function GamePage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* 固定汤底显示 */}
+        <div className="mystery-card p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <BookOpen size={24} className="text-yellow-400 mr-3" />
+            <h2 className="text-xl font-bold text-yellow-300">当前汤底</h2>
+          </div>
+          <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-600/30 rounded-lg p-4">
+            <p className="text-lg text-yellow-200 leading-relaxed">
+              {gameState.soupStory}
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：玩家列表和血量 */}
           <div className="lg:col-span-1 space-y-6">
@@ -385,7 +375,7 @@ export default function GamePage() {
                       {player.isHost && <Crown size={16} className="text-yellow-400" />}
                       <span className="font-medium text-gray-200">{player.name}</span>
                       {gameState.currentTurn === player.id && (
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                       )}
                     </div>
                     <div className="flex items-center space-x-2">
@@ -420,7 +410,7 @@ export default function GamePage() {
                 </h3>
                 <div className="space-y-3">
                   {gameState.discoveredClues.map((clue, index) => (
-                    <div key={index} className="p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg clue-reveal">
+                    <div key={index} className="p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
                       <p className="text-sm text-yellow-200">{clue.description}</p>
                     </div>
                   ))}
@@ -451,7 +441,7 @@ export default function GamePage() {
               
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {gameState.chatHistory.map((message, index) => (
-                  <div key={index} className="flex space-x-3 message-enter">
+                  <div key={index} className="flex space-x-3">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                         {message.playerName.charAt(0).toUpperCase()}
@@ -483,15 +473,15 @@ export default function GamePage() {
                   <div className="flex space-x-3">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                        <Sparkles size={16} className="text-white animate-pulse" />
+                        <Sparkles size={16} className="text-white" />
                       </div>
                     </div>
                     <div className="flex-1">
                       <div className="bg-gray-800/50 border border-gray-600/30 rounded-lg p-3">
                         <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-100"></div>
-                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-200"></div>
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                         </div>
                       </div>
                     </div>

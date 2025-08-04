@@ -45,22 +45,26 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `你是一个海龟汤游戏的主持人。玩家会提出可以用"是"或"否"回答的问题。
+              content: `你是海龟汤游戏的主持人，需要回答玩家的问题。
+
 游戏规则：
-1. 只能回答：是、不是、无关、你很接近了
-2. 根据故事内容判断问题的相关性
+1. 根据故事内容判断问题的相关性
+2. 只能回答：是、不是、无关、你很接近了
 3. 保持神秘感，不要透露太多信息
 4. 如果问题无法用是/否回答，回答"无关"
+5. 回答要简洁自然，不要过于死板
 
-故事背景：${soupStory}`
+故事背景：${soupStory}
+
+请根据问题给出简洁自然的回答。`
             },
             {
               role: 'user',
               content: `问题：${question}`
             }
           ],
-          max_tokens: 50,
-          temperature: 0.7
+          max_tokens: 30,
+          temperature: 0.8
         })
       });
 
@@ -151,23 +155,26 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `你是海龟汤游戏的裁判。判断玩家的猜测是否正确。
+              content: `你是海龟汤游戏的裁判，需要判断玩家的猜测是否正确。
+
 规则：
 1. 严格比较猜测与故事内容
 2. 如果猜测基本正确（核心要素匹配），返回"正确"
 3. 如果部分正确但不够完整，返回"部分正确"
 4. 如果完全错误，返回"错误"
-5. 给出简短的评价和建议
+5. 给出简短自然的评价和建议
 
-故事：${soupStory}`
+故事：${soupStory}
+
+请给出简洁自然的判断结果。`
             },
             {
               role: 'user',
               content: `玩家猜测：${guess}`
             }
           ],
-          max_tokens: 150,
-          temperature: 0.3
+          max_tokens: 80,
+          temperature: 0.6
         })
       });
 
@@ -263,22 +270,26 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `你是海龟汤游戏的主持人，为玩家提供提示。
+              content: `你是海龟汤游戏的主持人，需要为玩家提供提示。
+
 规则：
 1. 根据游戏进度提供适当的提示
 2. 提示要有用但不要直接透露答案
-3. 提示要简洁明了
+3. 提示要简洁自然，避免过于死板
 4. 考虑已发现的线索，避免重复
+5. 提示要引导玩家思考，而不是直接给出答案
 
 故事：${soupStory}
-已发现的线索：${discoveredClues.join(', ')}`
+已发现的线索：${discoveredClues.join(', ')}
+
+请提供一个简洁自然的提示。`
             },
             {
               role: 'user',
               content: '请提供一个有用的提示'
             }
           ],
-          max_tokens: 100,
+          max_tokens: 60,
           temperature: 0.7
         })
       });

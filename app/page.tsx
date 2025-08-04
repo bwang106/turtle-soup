@@ -143,13 +143,13 @@ export default function HomePage() {
         {/* 主标题区域 */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
-            <Sparkles className="w-12 h-12 text-purple-400 mr-4 animate-pulse" />
+            <Sparkles className="w-12 h-12 text-purple-400 mr-4" />
             <h1 className="text-7xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               海龟汤
             </h1>
-            <Sparkles className="w-12 h-12 text-purple-400 ml-4 animate-pulse delay-500" />
+            <Sparkles className="w-12 h-12 text-purple-400 ml-4" />
           </div>
-          <p className="text-2xl text-gray-300 mb-8 typewriter">
+          <p className="text-2xl text-gray-300 mb-8">
             逻辑推理游戏 - 与 AI 主持人一起探索谜题
           </p>
           
