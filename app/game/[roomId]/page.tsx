@@ -17,7 +17,9 @@ import {
   Zap,
   Eye,
   Brain,
-  BookOpen
+  BookOpen,
+  Key,
+  TestTube
 } from 'lucide-react';
 
 export default function GamePage() {
@@ -36,6 +38,12 @@ export default function GamePage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showAITest, setShowAITest] = useState(false);
+  const [aiTestKey, setAiTestKey] = useState('');
+  const [isTestingAI, setIsTestingAI] = useState(false);
+  const [testResult, setTestResult] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -276,6 +284,46 @@ export default function GamePage() {
     }
   };
 
+  const handlePasswordSubmit = () => {
+    // 谜底密码：turtle2024
+    if (password === 'turtle2024') {
+      alert('密码正确！谜底是：' + gameState?.soupStory);
+      setShowPasswordModal(false);
+      setPassword('');
+    } else {
+      alert('密码错误！');
+    }
+  };
+
+  const handleAITest = async () => {
+    if (!aiTestKey.trim()) {
+      alert('请输入OpenAI API密钥');
+      return;
+    }
+
+    setIsTestingAI(true);
+    try {
+      const response = await fetch('/api/test-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiKey: aiTestKey.trim() }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setTestResult(`✅ AI测试成功！\n模型: ${data.model}\n测试回答: ${data.testAnswer}`);
+      } else {
+        setTestResult(`❌ AI测试失败！\n错误: ${data.error}\n详情: ${data.details || '无'}`);
+      }
+    } catch (error) {
+      setTestResult(`❌ AI测试失败！\n错误: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setIsTestingAI(false);
+    }
+  };
+
   const handleLeaveGame = () => {
     router.push('/');
   };
@@ -343,9 +391,27 @@ export default function GamePage() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* 固定汤底显示 */}
         <div className="mystery-card p-6 mb-6">
-          <div className="flex items-center mb-4">
-            <BookOpen size={24} className="text-yellow-400 mr-3" />
-            <h2 className="text-xl font-bold text-yellow-300">当前汤底</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <BookOpen size={24} className="text-yellow-400 mr-3" />
+              <h2 className="text-xl font-bold text-yellow-300">当前汤底</h2>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                title="查看谜底密码"
+              >
+                <Key size={14} />
+              </button>
+              <button
+                onClick={() => setShowAITest(true)}
+                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                title="测试AI连接"
+              >
+                <TestTube size={14} />
+              </button>
+            </div>
           </div>
           <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-600/30 rounded-lg p-4">
             <p className="text-lg text-yellow-200 leading-relaxed">
@@ -558,6 +624,110 @@ export default function GamePage() {
               >
                 取消
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 密码模态框 */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="mystery-card p-8 w-full max-w-md mx-4 modal-enter">
+            <h3 className="text-lg font-semibold mb-4 text-red-300 flex items-center">
+              <Key size={20} className="mr-2" />
+              谜底密码
+            </h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                输入密码
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="输入密码..."
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-400"
+                onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              />
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handlePasswordSubmit}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105"
+              >
+                验证密码
+              </button>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPassword('');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI测试模态框 */}
+      {showAITest && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="mystery-card p-8 w-full max-w-md mx-4 modal-enter">
+            <h3 className="text-lg font-semibold mb-4 text-blue-300 flex items-center">
+              <TestTube size={20} className="mr-2" />
+              AI连接测试
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  OpenAI API 密钥
+                </label>
+                <input
+                  type="password"
+                  value={aiTestKey}
+                  onChange={(e) => setAiTestKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                />
+              </div>
+              
+              {testResult && (
+                <div className="p-4 bg-gray-800/50 border border-gray-600/30 rounded-lg">
+                  <pre className="text-sm text-gray-200 whitespace-pre-wrap">{testResult}</pre>
+                </div>
+              )}
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleAITest}
+                  disabled={isTestingAI}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  {isTestingAI ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>测试中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <TestTube size={16} />
+                      <span>测试AI</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAITest(false);
+                    setAiTestKey('');
+                    setTestResult('');
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+                >
+                  关闭
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -28,9 +28,11 @@ body {
   color: var(--text-primary);
   font-family: 'Georgia', serif;
   min-height: 100vh;
+  /* 防止页面跳动 */
+  scroll-behavior: smooth;
 }
 
-/* 简化背景 - 移除动画 */
+/* 简化背景 - 完全移除动画 */
 .mystery-bg {
   background: 
     radial-gradient(circle at 20% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
@@ -38,7 +40,7 @@ body {
     radial-gradient(circle at 40% 40%, rgba(147, 51, 234, 0.05) 0%, transparent 50%);
 }
 
-/* 卡片样式 - 简化悬停效果 */
+/* 卡片样式 - 完全移除变换效果 */
 .mystery-card {
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -52,116 +54,49 @@ body {
   border-color: rgba(124, 58, 237, 0.3);
 }
 
-/* 简化发光效果 */
+/* 简化发光效果 - 移除动画 */
 .glow-effect {
   box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
 }
 
-/* 简化打字机效果 */
+/* 移除打字机效果 */
 .typewriter {
   overflow: hidden;
-  border-right: 2px solid var(--accent-glow);
   white-space: nowrap;
-  animation: typing 2s steps(40, end);
 }
 
-@keyframes typing {
-  from { width: 0; }
-  to { width: 100%; }
-}
-
-/* 简化线索卡片动画 */
+/* 移除线索卡片动画 */
 .clue-reveal {
-  animation: clue-float 0.3s ease-out;
+  /* 移除所有动画 */
 }
 
-@keyframes clue-float {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 简化血量动画 */
+/* 移除血量动画 */
 .heart-beat {
-  animation: heartbeat 2s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  /* 移除心跳动画 */
 }
 
 .heart-lose {
-  animation: heart-lose 0.3s ease-out;
+  /* 移除血量减少动画 */
 }
 
-@keyframes heart-lose {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-}
-
-/* 简化纸飞机动画 */
+/* 移除纸飞机动画 */
 .paper-plane {
-  animation: fly-away 0.5s ease-out forwards;
+  /* 移除纸飞机动画 */
 }
 
-@keyframes fly-away {
-  0% {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(50px) translateY(-20px);
-  }
-}
-
-/* 简化玩家头像发光效果 */
+/* 简化玩家头像发光效果 - 移除动画 */
 .player-turn {
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 /* 简化弹窗动画 */
 .modal-enter {
-  animation: modal-slide-in 0.2s ease-out;
+  /* 移除弹窗动画 */
 }
 
-@keyframes modal-slide-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 简化聊天消息动画 */
+/* 移除聊天消息动画 */
 .message-enter {
-  animation: message-slide-in 0.2s ease-out;
-}
-
-@keyframes message-slide-in {
-  0% {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  /* 移除消息动画 */
 }
 
 /* AI回答特殊样式 - 简化 */
@@ -175,10 +110,6 @@ body {
   .mystery-card {
     margin: 8px;
     border-radius: 8px;
-  }
-  
-  .typewriter {
-    font-size: 14px;
   }
 }
 
@@ -198,4 +129,23 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--mystery-purple);
+}
+
+/* 防止按钮点击时的跳动 */
+button {
+  transform: none !important;
+}
+
+button:hover {
+  transform: none !important;
+}
+
+/* 防止卡片悬停时的跳动 */
+.mystery-card:hover {
+  transform: none !important;
+}
+
+/* 防止输入框聚焦时的跳动 */
+input:focus, textarea:focus {
+  transform: none !important;
 } 
