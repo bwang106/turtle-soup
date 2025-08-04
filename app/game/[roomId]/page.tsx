@@ -370,6 +370,20 @@ export default function GamePage() {
               </div>
             </div>
 
+            {/* 游戏规则提示 */}
+            <div className="bg-white rounded-lg shadow-sm border p-4 mt-4">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Lightbulb size={20} className="mr-2" />
+                游戏规则
+              </h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• 只能提出可以用"是"或"否"回答的问题</p>
+                <p>• 提问不消耗血量，只有请求提示才消耗</p>
+                <p>• AI回答：是 / 不是 / 无关 / 你很接近了</p>
+                <p>• 尝试猜测完整故事来获胜</p>
+              </div>
+            </div>
+
             {/* 线索区域 */}
             {gameState.discoveredClues.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border p-4 mt-4">
@@ -447,7 +461,7 @@ export default function GamePage() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
-                    placeholder={isMyTurn ? "输入你的问题（不消耗血量）..." : "等待其他玩家..."}
+                    placeholder={isMyTurn ? "输入是/否问题，如：'他是被谋杀的吗？'" : "等待其他玩家..."}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={!isMyTurn || currentPlayer.health <= 0}
                   />

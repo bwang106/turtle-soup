@@ -94,8 +94,8 @@ class GameStore {
     // 添加游戏开始消息
     this.addChatMessage(roomId, {
       playerId: 'system',
-      playerName: '系统',
-      message: `游戏开始！汤底：${game.soupStory}`,
+      playerName: 'AI主持人',
+      message: `游戏开始！汤面：${game.soupStory}`,
       type: 'system'
     });
 

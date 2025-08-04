@@ -16,39 +16,41 @@ export class AIService {
     const normalizedQuestion = question.toLowerCase();
     const normalizedStory = soupStory.toLowerCase();
     
-    // 更智能的关键词匹配逻辑
-    const storyKeywords = this.extractKeywords(normalizedStory);
-    const questionKeywords = this.extractKeywords(normalizedQuestion);
+    // 检查问题是否为合法的"是/否"判断题
+    if (!this.isValidYesNoQuestion(normalizedQuestion)) {
+      return { 
+        answer: 'irrelevant',
+        explanation: '请提出可以用"是"或"否"回答的问题。'
+      };
+    }
     
-    // 检查问题类型
+    // 分析问题类型和内容
     const questionType = this.analyzeQuestionType(normalizedQuestion);
-    
-    // 根据故事内容进行智能分析
     const analysis = this.analyzeStoryContent(normalizedStory, normalizedQuestion);
     
     // 计算相关性分数
-    const relevanceScore = this.calculateRelevanceScore(storyKeywords, questionKeywords, analysis);
+    const relevanceScore = this.calculateRelevanceScore(normalizedQuestion, soupStory, analysis);
     
-    // 根据分数和问题类型给出答案
+    // 根据海龟汤标准规则给出回答
     if (relevanceScore >= 0.8) {
       return { 
         answer: 'yes',
-        explanation: this.generateExplanation(question, soupStory, 'yes')
+        explanation: '是'
       };
-    } else if (relevanceScore >= 0.5) {
+    } else if (relevanceScore >= 0.6) {
       return { 
         answer: 'close',
-        explanation: this.generateExplanation(question, soupStory, 'close')
+        explanation: '你很接近了'
       };
     } else if (relevanceScore >= 0.3) {
       return { 
         answer: 'irrelevant',
-        explanation: this.generateExplanation(question, soupStory, 'irrelevant')
+        explanation: '无关'
       };
     } else {
       return { 
         answer: 'no',
-        explanation: this.generateExplanation(question, soupStory, 'no')
+        explanation: '不是'
       };
     }
   }
@@ -108,6 +110,24 @@ export class AIService {
     return hints[Math.floor(Math.random() * hints.length)];
   }
 
+  private isValidYesNoQuestion(question: string): boolean {
+    // 检查是否为合法的"是/否"判断题
+    const validQuestionPatterns = [
+      /是.*吗\?*$/,
+      /不是.*吗\?*$/,
+      /有没有.*\?*$/,
+      /是否.*\?*$/,
+      /会不会.*\?*$/,
+      /能不能.*\?*$/,
+      /.*吗\?*$/,
+      /.*是不是.*\?*$/,
+      /.*有没有.*\?*$/,
+      /.*是否.*\?*$/
+    ];
+    
+    return validQuestionPatterns.some(pattern => pattern.test(question));
+  }
+
   private analyzeQuestionType(question: string): string {
     if (question.includes('为什么') || question.includes('原因') || question.includes('动机')) {
       return 'motive';
@@ -135,13 +155,24 @@ export class AIService {
       hasCorpse: story.includes('尸体'),
       hasCouple: story.includes('夫妇') || story.includes('夫妻'),
       hasFish: story.includes('鱼'),
-      hasSteak: story.includes('牛排')
+      hasSteak: story.includes('牛排'),
+      hasPlane: story.includes('飞机') || story.includes('迫降'),
+      hasMatch: story.includes('火柴'),
+      hasHiccup: story.includes('打嗝'),
+      hasDwarf: story.includes('侏儒'),
+      hasCannibalism: story.includes('海龟汤') || story.includes('人肉'),
+      hasSacrifice: story.includes('牺牲') || story.includes('血液'),
+      hasPoison: story.includes('河豚') || story.includes('毒'),
+      hasMedical: story.includes('治疗') || story.includes('止嗝')
     };
     
     return analysis;
   }
 
-  private calculateRelevanceScore(storyKeywords: string[], questionKeywords: string[], analysis: any): number {
+  private calculateRelevanceScore(question: string, story: string, analysis: any): number {
+    const questionKeywords = this.extractKeywords(question);
+    const storyKeywords = this.extractKeywords(story);
+    
     // 基础关键词匹配
     const commonKeywords = storyKeywords.filter(keyword => questionKeywords.includes(keyword));
     const keywordScore = commonKeywords.length / Math.max(storyKeywords.length, questionKeywords.length);
@@ -149,40 +180,67 @@ export class AIService {
     // 概念匹配
     const conceptMatches = this.calculateConceptMatches(questionKeywords, analysis);
     
+    // 问题类型匹配
+    const questionTypeScore = this.calculateQuestionTypeScore(question, story);
+    
     // 综合评分
-    return (keywordScore * 0.6 + conceptMatches * 0.4);
+    return (keywordScore * 0.5 + conceptMatches * 0.3 + questionTypeScore * 0.2);
   }
 
   private calculateConceptMatches(keywords: string[], analysis: any): number {
     let matches = 0;
     let total = 0;
     
-    if (keywords.some(k => k.includes('死') || k.includes('自杀'))) {
-      matches += analysis.hasDeath ? 1 : 0;
-      total += 1;
-    }
+    const conceptMappings = [
+      { keywords: ['死', '自杀', '死亡'], concept: 'hasDeath' },
+      { keywords: ['餐厅', '酒吧'], concept: 'hasRestaurant' },
+      { keywords: ['水'], concept: 'hasWater' },
+      { keywords: ['电梯'], concept: 'hasElevator' },
+      { keywords: ['枪'], concept: 'hasGun' },
+      { keywords: ['沙漠'], concept: 'hasDesert' },
+      { keywords: ['尸体'], concept: 'hasCorpse' },
+      { keywords: ['夫妇', '夫妻'], concept: 'hasCouple' },
+      { keywords: ['鱼'], concept: 'hasFish' },
+      { keywords: ['牛排'], concept: 'hasSteak' },
+      { keywords: ['飞机', '迫降'], concept: 'hasPlane' },
+      { keywords: ['火柴'], concept: 'hasMatch' },
+      { keywords: ['打嗝'], concept: 'hasHiccup' },
+      { keywords: ['侏儒'], concept: 'hasDwarf' },
+      { keywords: ['海龟汤', '人肉'], concept: 'hasCannibalism' },
+      { keywords: ['牺牲', '血液'], concept: 'hasSacrifice' },
+      { keywords: ['河豚', '毒'], concept: 'hasPoison' },
+      { keywords: ['治疗', '止嗝'], concept: 'hasMedical' }
+    ];
     
-    if (keywords.some(k => k.includes('餐厅') || k.includes('酒吧'))) {
-      matches += analysis.hasRestaurant ? 1 : 0;
-      total += 1;
-    }
-    
-    if (keywords.some(k => k.includes('水'))) {
-      matches += analysis.hasWater ? 1 : 0;
-      total += 1;
-    }
-    
-    if (keywords.some(k => k.includes('电梯'))) {
-      matches += analysis.hasElevator ? 1 : 0;
-      total += 1;
-    }
-    
-    if (keywords.some(k => k.includes('枪'))) {
-      matches += analysis.hasGun ? 1 : 0;
-      total += 1;
-    }
+    conceptMappings.forEach(mapping => {
+      if (keywords.some(k => mapping.keywords.some(concept => k.includes(concept)))) {
+        matches += analysis[mapping.concept] ? 1 : 0;
+        total += 1;
+      }
+    });
     
     return total > 0 ? matches / total : 0;
+  }
+
+  private calculateQuestionTypeScore(question: string, story: string): number {
+    const questionType = this.analyzeQuestionType(question);
+    const storyKeywords = this.extractKeywords(story);
+    
+    // 根据问题类型和故事内容的匹配度计算分数
+    switch (questionType) {
+      case 'motive':
+        return storyKeywords.some(k => k.includes('为什么') || k.includes('原因')) ? 0.8 : 0.3;
+      case 'what':
+        return storyKeywords.some(k => k.includes('什么') || k.includes('哪个')) ? 0.8 : 0.3;
+      case 'who':
+        return storyKeywords.some(k => k.includes('谁') || k.includes('人物')) ? 0.8 : 0.3;
+      case 'how':
+        return storyKeywords.some(k => k.includes('怎么') || k.includes('如何')) ? 0.8 : 0.3;
+      case 'when':
+        return storyKeywords.some(k => k.includes('时间') || k.includes('时候')) ? 0.8 : 0.3;
+      default:
+        return 0.5;
+    }
   }
 
   private calculateSemanticSimilarity(guess: string, story: string): number {
@@ -206,7 +264,8 @@ export class AIService {
   private extractConcepts(text: string): string[] {
     const concepts = [
       '死亡', '自杀', '餐厅', '酒吧', '水', '电梯', '枪', '沙漠', '尸体', '夫妇', '鱼', '牛排',
-      '男人', '女人', '酒保', '海龟汤', '河豚', '打嗝', '侏儒', '血液'
+      '男人', '女人', '酒保', '海龟汤', '河豚', '打嗝', '侏儒', '血液', '飞机', '迫降', '火柴',
+      '抽签', '跳伞', '生存', '牺牲', '中毒', '治疗'
     ];
     
     return concepts.filter(concept => text.includes(concept));
@@ -218,6 +277,7 @@ export class AIService {
     if (story.includes('电梯') && story.includes('10楼')) return 'physical';
     if (story.includes('河豚') || story.includes('鱼')) return 'poison';
     if (story.includes('打嗝') || story.includes('枪')) return 'medical';
+    if (story.includes('飞机') || story.includes('迫降')) return 'survival';
     return 'general';
   }
 
@@ -260,6 +320,12 @@ export class AIService {
         '思考治疗方法的原理',
         '关注人物的需求',
         '注意误解的产生'
+      ],
+      survival: [
+        '思考生存环境的变化',
+        '注意团队合作的重要性',
+        '关注随机性的影响',
+        '思考生死抉择'
       ]
     };
     
@@ -276,17 +342,6 @@ export class AIService {
     } else {
       return '你刚开始探索，尝试从不同角度分析故事。';
     }
-  }
-
-  private generateExplanation(question: string, story: string, answer: string): string {
-    const explanations = {
-      yes: '这个问题与故事直接相关。',
-      close: '这个问题与故事有一定关联，但可能需要更具体的思考。',
-      irrelevant: '这个问题与故事的核心内容关系不大。',
-      no: '这个问题的答案是否定的。'
-    };
-    
-    return explanations[answer as keyof typeof explanations] || '';
   }
 
   private extractKeywords(text: string): string[] {
@@ -321,7 +376,10 @@ export class AIService {
         "妻子点的不是鱼，而是河豚。河豚有毒，丈夫尝了一口就中毒身亡了。",
       
       "一个男人走进一家酒吧，向酒保要了一杯水。酒保拿出一把枪指着他。男人说谢谢，然后离开了。为什么？": 
-        "这个男人有打嗝的毛病，他需要一杯水来止嗝。酒保用枪指着他是一种止嗝的方法，因为惊吓可以止嗝。"
+        "这个男人有打嗝的毛病，他需要一杯水来止嗝。酒保用枪指着他是一种止嗝的方法，因为惊吓可以止嗝。",
+      
+      "一个人死在沙漠中，手中握着一根断掉的火柴": 
+        "这是一群人在飞机迫降后抽签决定谁跳伞。这个人抽到了短签，在跳伞过程中摔死在沙漠上。"
     };
     
     return storyAnswers[soupStory] || "这是一个关于逻辑推理的故事，需要仔细分析每个细节。";
